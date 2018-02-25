@@ -15,5 +15,15 @@
             "email": "esolitos@gmail.com"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "Esolitos\\PwnedPasswords\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Esolitos\\PwnedPasswords\\Tests\\": "tests/src/"
+        }
+    },
     "minimum-stability": "dev"
 }
