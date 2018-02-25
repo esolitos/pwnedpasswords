@@ -1,6 +1,6 @@
 <?php
 
-namespace Esolitos\PwnedPasswords;
+namespace Esolitos\PwnedPasswords\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Esolitos\PwnedPasswords\PwnageValidator;
