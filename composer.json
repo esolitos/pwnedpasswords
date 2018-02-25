@@ -22,7 +22,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Esolitos\\PwnedPasswords\\Test\\": "tests/src/"
+            "Esolitos\\PwnedPasswords\\Tests\\": "tests/src/"
         }
     },
     "minimum-stability": "dev"
