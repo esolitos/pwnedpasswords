@@ -59,10 +59,10 @@ class PwnageValidatorTest extends TestCase {
    */
   public function plaintextAndHashProvider() {
     return [
-      ['1234', '1BE168FF837F043BDE17C0314341C84271047B31'],
-      ['foobar', '988881adc9fc3655077dc2d4d757d480b5ea0e11'],
-      ['lorem ipsum', '1d9616855a130da2cd0665f79139f6d7853595b1'],
-      ['p@ssword', '35a90e0e7af38a53156d71b453d332cf2ad3dd73'],
+      ['1234', '7110EDA4D09E062AA5E4A390B0A572AC0D2C0220'],
+      ['foobar', '8843D7F92416211DE9EBB963FF4CE28125932878'],
+      ['lorem ipsum', 'BFB7759A67DAEB65410490B4D98BB9DA7D1EA2CE'],
+      ['p@ssword', '36E618512A68721F032470BB0891ADEF3362CFA9'],
     ];
   }
 }
