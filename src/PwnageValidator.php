@@ -22,8 +22,7 @@ class PwnageValidator implements PwnageValidatorInterface {
       'http_errors' => FALSE,
       'timeout'     => 2,
       'headers'     => [
-        // TODO
-        'User-Agent' => $_SERVER['SERVER_NAME'] . ' via PwnedPassword on Drupal 8 - https://drupal.org/project/pwned_password',
+        'User-Agent' => 'esolitos/pwnedpassword library - https://packagist.org/packages/esolitos/pwnedpasswords',
       ],
     ];
   }
