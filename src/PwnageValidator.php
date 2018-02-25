@@ -51,15 +51,15 @@ class PwnageValidator implements PwnageValidatorInterface {
     $allPartialMatches = $this->fetchPossibleMatches($hashPrefix);
     foreach ($allPartialMatches as $partialMatch) {
       // Split the partial hash match and the match count
-      list($testHash, $marchesCount) = explode(':', $possible_match);
+      list($testHash, $marchesCount) = explode(':', $partialMatch);
 
       if ($hashedPassword === "{$hashPrefix}{$testHash}") {
-        $pwnageLevel = $count;
+        $pwnageLevel = $marchesCount;
         break;
       }
     }
 
-    return $pwnage_level;
+    return $pwnageLevel;
   }
 
   /**
