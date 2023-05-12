@@ -3,7 +3,7 @@
     "description": "Generic service to query Troy's pwnedpasswords.com service.",
     "type": "library",
     "require": {
-        "guzzlehttp/guzzle": "^6.2.1"
+        "guzzlehttp/guzzle": "^6.2 || ^7.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^7.0"
