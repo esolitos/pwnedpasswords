@@ -142,7 +142,7 @@ class PwnageValidatorTest extends TestCase {
   /**
    * Provider of plaintext with respective hashes.
    */
-  public function plaintextAndHashProvider() {
+  public static function plaintextAndHashProvider() {
     return [
       ['1234', '7110EDA4D09E062AA5E4A390B0A572AC0D2C0220'],
       ['foobar', '8843D7F92416211DE9EBB963FF4CE28125932878'],
@@ -152,7 +152,7 @@ class PwnageValidatorTest extends TestCase {
   }
 
 
-  public function possibleHashMatchesProvider() {
+  public static function possibleHashMatchesProvider() {
     return [
       [ // 1234
         '7110E',
