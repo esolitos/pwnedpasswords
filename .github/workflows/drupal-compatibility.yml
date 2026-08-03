@@ -11,7 +11,21 @@ permissions:
 
 jobs:
   drupal-compatibility:
+    name: Drupal ${{ matrix.drupal.name }} / pwned_passwords ${{ matrix.module.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        drupal:
+          - name: latest
+            constraint: '*'
+          - name: '11'
+            constraint: '^11'
+          - name: '10'
+            constraint: '^10'
+        module:
+          - name: 1.x
+            constraint: 1.x-dev
 
     steps:
       - name: Checkout repository
@@ -28,13 +42,13 @@ jobs:
         run: |
           set -euxo pipefail
 
-          composer create-project drupal/recommended-project:^10 drupal --no-interaction --no-install
+          composer create-project "drupal/recommended-project:${{ matrix.drupal.constraint }}" drupal --no-interaction --no-install
           cd drupal
 
           composer config minimum-stability dev
           composer config prefer-stable true
           composer config repositories.pwnedpasswords '{"type":"path","url":"../","options":{"symlink":false,"versions":{"esolitos/pwnedpasswords":"1.0.x-dev"}}}'
-          composer require --no-interaction --no-install drush/drush:^13 drupal/pwned_passwords:^1.0 esolitos/pwnedpasswords:1.0.x-dev
+          composer require --no-interaction --no-install drush/drush:^13 "drupal/pwned_passwords:${{ matrix.module.constraint }}" esolitos/pwnedpasswords:1.0.x-dev
           composer update --no-interaction --prefer-dist --with-all-dependencies drupal/pwned_passwords esolitos/pwnedpasswords drush/drush
 
       - name: Install Drupal and enable module
