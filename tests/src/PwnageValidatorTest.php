@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Esolitos\PwnedPasswords\PwnageValidator;
 
@@ -39,9 +40,8 @@ class PwnageValidatorTest extends TestCase {
   /**
    * @param string $hashed_password
    * @param array $expected_matches
-   *
-   * @dataProvider possibleHashMatchesProvider()
    */
+  #[DataProvider('possibleHashMatchesProvider')]
   public function testFetchPossibleMatches(string $hashed_password, array $expected_matches, bool $is_valid = TRUE) {
     $guzzle_mock = new MockHandler([
       new Response(200, ['content-type'=>'text/plain; charset=utf-8'], implode("\r\n", $expected_matches))
@@ -54,7 +54,8 @@ class PwnageValidatorTest extends TestCase {
     $fetchPossibleMatchesMethod = $this->getAccessibleMethod('fetchPossibleMatches');
 
     if (!$is_valid) {
-      $this->setExpectedException(\InvalidArgumentException::class, "Provided hash prefix is not valid: {$hashed_password}");
+      $this->expectException(\InvalidArgumentException::class);
+      $this->expectExceptionMessage("Provided hash prefix is not valid: {$hashed_password}");
     }
     $returned_matches = $fetchPossibleMatchesMethod->invoke($pwnageValidator, $hashed_password);
 
@@ -62,15 +63,12 @@ class PwnageValidatorTest extends TestCase {
   }
 
   /**
-   * Test a few expectable errors
+   * Test successful fetch and 404 (empty result).
    */
-  public function testFailuresOnFetchPossibleMatches() {
+  public function testFetchPossibleMatchesSuccessAndNotFound() {
     $guzzle_mock = new MockHandler([
       new Response(200, ['content-type' => 'text/plain; charset=utf-8'], "6F273C1493539AC19103C4FD0B9521FE95A:1\r\n"),
       new Response(404),
-// TODO:      new Response(400, ['content-type' => 'text/plain; charset=utf-8'], "The hash prefix was not in a valid format"),
-      new Response(429, ['Retry-After:' => '2'], "Rate limit exceeded, refer to acceptable use of the API: https://haveibeenpwned.com/API/v2#AcceptableUse"),
-      new Response(500),
     ]);
     $guzzle_stack = HandlerStack::create($guzzle_mock);
     $mock_client = new Client(['handler' => $guzzle_stack]);
@@ -86,30 +84,51 @@ class PwnageValidatorTest extends TestCase {
     // 2nd call: 404 = empty
     $returned_matches = $fetchPossibleMatchesMethod->invoke($pwnageValidator, '8843D');
     $this->assertEmpty($returned_matches);
+  }
 
-    // 3rd call: Should fail as it's an invalid hash prefix (too long)
-//    $invalid_prefix = '8843DAA';
-//    $this->setExpectedException(\InvalidArgumentException::class, "Server denoted an invalid hash prefix: {$invalid_prefix}");
-//    $returned_matches = $fetchPossibleMatchesMethod->invoke($pwnageValidator, $invalid_prefix);
+  /**
+   * Test Http error 429: rate limited.
+   */
+  public function testFetchPossibleMatchesRateLimited() {
+    $guzzle_mock = new MockHandler([
+      new Response(429, ['Retry-After' => '2'], "Rate limit exceeded, refer to acceptable use of the API: https://haveibeenpwned.com/API/v2#AcceptableUse"),
+    ]);
+    $guzzle_stack = HandlerStack::create($guzzle_mock);
+    $mock_client = new Client(['handler' => $guzzle_stack]);
 
-    // 4th call: Http error 429: rate limited
-    $this->setExpectedException(ClientException::class, "Rate limit exceeded, refer to acceptable use of the API: https://haveibeenpwned.com/API/v2#AcceptableUse", 429);
-    $returned_matches = $fetchPossibleMatchesMethod->invoke($pwnageValidator, '8843D');
+    $pwnageValidator = new PwnageValidator();
+    $pwnageValidator->withHttpClient($mock_client);
+    $fetchPossibleMatchesMethod = $this->getAccessibleMethod('fetchPossibleMatches');
 
-    // 5th call: 500, ServerError is thrown
-    $this->setExpectedException(ServerException::class);
-    $returned_matches = $fetchPossibleMatchesMethod->invoke($pwnageValidator, '8843D');
-    $this->assertEmpty($returned_matches);
+    $this->expectException(ClientException::class);
+    $fetchPossibleMatchesMethod->invoke($pwnageValidator, '8843D');
+  }
+
+  /**
+   * Test Http error 500: server error.
+   */
+  public function testFetchPossibleMatchesServerError() {
+    $guzzle_mock = new MockHandler([
+      new Response(500),
+    ]);
+    $guzzle_stack = HandlerStack::create($guzzle_mock);
+    $mock_client = new Client(['handler' => $guzzle_stack]);
+
+    $pwnageValidator = new PwnageValidator();
+    $pwnageValidator->withHttpClient($mock_client);
+    $fetchPossibleMatchesMethod = $this->getAccessibleMethod('fetchPossibleMatches');
+
+    $this->expectException(ServerException::class);
+    $fetchPossibleMatchesMethod->invoke($pwnageValidator, '8843D');
   }
 
   /**
    * @param string $plaintext
    * @param string $expected_hash
    *
-   * @dataProvider plaintextAndHashProvider()
-   *
    * @throws \ReflectionException
    */
+  #[DataProvider('plaintextAndHashProvider')]
   public function testGetUpperHash(string $plaintext, string $expected_hash) {
     $pwnageValidator = new PwnageValidator();
     $method = $this->getAccessibleMethod('getUpperHash');
