@@ -1,0 +1,61 @@
+name: Drupal compatibility
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  drupal-compatibility:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: gd, pdo_sqlite
+          tools: composer:v2
+
+      - name: Install Drupal with pwned_passwords
+        run: |
+          set -euxo pipefail
+
+          composer create-project drupal/recommended-project:^10 drupal --no-interaction --no-install
+          cd drupal
+
+          composer config minimum-stability dev
+          composer config prefer-stable true
+          composer config repositories.pwnedpasswords '{"type":"path","url":"../","options":{"symlink":false,"versions":{"esolitos/pwnedpasswords":"1.0.x-dev"}}}'
+          composer require --no-interaction --no-install drush/drush:^13 drupal/pwned_passwords:^1.0 esolitos/pwnedpasswords:1.0.x-dev
+          composer update --no-interaction --prefer-dist --with-all-dependencies drupal/pwned_passwords esolitos/pwnedpasswords drush/drush
+
+      - name: Install Drupal and enable module
+        working-directory: drupal
+        run: |
+          set -euxo pipefail
+
+          mkdir -p web/sites/default/files
+          vendor/bin/drush site:install standard \
+            --yes \
+            --db-url=sqlite://sites/default/files/.ht.sqlite \
+            --site-name='Drupal compatibility' \
+            --account-name=admin \
+            --account-pass=admin
+          vendor/bin/drush pm:enable pwned_passwords --yes
+          vendor/bin/drush status
+
+      - name: Smoke test registration page
+        working-directory: drupal
+        run: |
+          set -euxo pipefail
+
+          vendor/bin/drush config:set user.settings register visitors --yes
+          vendor/bin/drush php:eval '$request = \Symfony\Component\HttpFoundation\Request::create("/user/register"); $response = \Drupal::service("http_kernel")->handle($request); $status = $response->getStatusCode(); echo $status . PHP_EOL; if ($status !== 200) { throw new \RuntimeException("Expected /user/register to return HTTP 200, got " . $status); }'
